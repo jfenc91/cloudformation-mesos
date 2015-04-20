@@ -341,8 +341,8 @@
       "Properties" : {
         "GroupId" : { "Ref" : "SecurityGroup" },
         "IpProtocol" : "tcp",
-        "FromPort" : "5051",
-        "ToPort" : "5051",
+        "FromPort" : "0",
+        "ToPort" : "65535",
         "SourceSecurityGroupId" : { "Ref" : "MesosMasterSecurityGroup" }
       }
     },
@@ -353,8 +353,8 @@
       "Properties" : {
         "GroupId" : { "Ref" : "MesosMasterSecurityGroup" },
         "IpProtocol" : "tcp",
-        "FromPort" : "5050",
-        "ToPort" : "5050",
+        "FromPort" : "0",
+        "ToPort" : "65535",
         "SourceSecurityGroupId" : { "Ref" : "SecurityGroup" }
       }
     }

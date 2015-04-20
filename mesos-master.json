@@ -345,6 +345,11 @@
             ""
           ]},
 
+          "# Set up HA proxy for services\n",
+          "wget https://raw.githubusercontent.com/mesosphere/marathon/master/bin/haproxy-marathon-bridge /usr/local/bin\n",
+          "chmod +x /usr/local/bin\n",
+          "/usr/local/bin/marathon-bridge install_haproxy_system localhost:8080\n",
+
           "# All is well so signal success\n",
           "cfn-signal -e 0 -r \"Stack setup complete\" ",
               " --resource ServerGroup",
