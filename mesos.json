@@ -161,6 +161,10 @@
     "MesosSlaveTemplateUrl" : {
       "Description" : "URL of the Mesos Slave CloudFormation template on S3 (must be \"https://s3.amazonaws.com/<bucket>/<key>\")",
       "Type" : "String"
+    },
+    "MesosSlaveSpotTemplateUrl" : {
+      "Description" : "URL of the Mesos Slave CloudFormation template on S3 (must be \"https://s3.amazonaws.com/<bucket>/<key>\")",
+      "Type" : "String"
     }
   },
 
@@ -172,10 +176,10 @@
   "Mappings" : {
     "RegionMap" : {
       "us-east-1" : {
-        "AMI" : "ami-0a878262"
+        "AMI" : "ami-5296903a"
       },
       "us-west-1" : {
-        "AMI" : "ami-494eac0d"
+        "AMI" : "ami-0fc72a4b"
       },
       "us-west-2" : {
         "AMI" : "ami-734a7f43"
@@ -210,7 +214,7 @@
             { "Ref" : "MasterInstanceAmi" },
             { "Fn::FindInMap" : [ "RegionMap", { "Ref" : "AWS::Region" }, "AMI"] }
           ]},
-          "InstanceType" : { "Ref" : "MasterInstanceType" },
+          "InstanceType" : "m3.medium",
           "KeyName" : { "Ref" : "KeyName" },
           "ClusterId" : { "Ref" : "ClusterId" },
           "ClusterSize" : { "Ref" : "MasterInstanceCount" },
@@ -231,8 +235,7 @@
         }
       }
     },
-
-    "MesosSlaveStack" : {
+    "MesosSlaveStackMedium" : {
       "Type" : "AWS::CloudFormation::Stack",
       "DependsOn" : "MesosMasterStack",
       "Properties" : {
@@ -244,10 +247,106 @@
             { "Ref" : "SlaveInstanceAmi" },
             { "Fn::FindInMap" : [ "RegionMap", { "Ref" : "AWS::Region" }, "AMI"] }
           ]},
-          "InstanceType" : { "Ref" : "SlaveInstanceType" },
+          "InstanceType" : "m3.medium",
           "KeyName" : { "Ref" : "KeyName" },
           "ClusterId" : { "Ref" : "ClusterId" },
           "ClusterSize" : { "Ref" : "SlaveInstanceCount" },
+          "DockerCredentials" : { "Ref" : "DockerCredentials" },
+          "LogstashConfig" : { "Ref" : "SlaveLogstashConfig" },
+          "ConfigScriptS3Bucket" : { "Ref" : "SlaveConfigScriptS3Bucket" },
+          "ConfigScriptS3Path" : { "Ref" : "SlaveConfigScriptS3Path" },
+          "MesosResources" : { "Ref" : "SlaveResources" },
+          "ExhibitorDiscoveryUrl" : { "Ref" : "ExhibitorDiscoveryUrl" },
+          "ZkClientSecurityGroup" : { "Ref" : "ZkClientSecurityGroup" },
+          "MesosMasterSecurityGroup" : { "Fn::GetAtt" : [ "MesosMasterStack", "Outputs.MesosMasterSecurityGroup" ] },
+          "AdminSecurityGroup" : { "Ref" : "AdminSecurityGroup" },
+          "Subnets" : { "Ref" : "Subnets" },
+          "VpcId" : { "Ref" : "VpcId" },
+          "AvailabilityZones" : { "Ref" : "AvailabilityZones" }
+        }
+      }
+    },
+    "MesosSlaveStackMediumSpot" : {
+      "Type" : "AWS::CloudFormation::Stack",
+      "DependsOn" : "MesosMasterStack",
+      "Properties" : {
+        "TemplateURL" : { "Ref" : "MesosSlaveSpotTemplateUrl" },
+        "TimeoutInMinutes" : "15",
+        "Parameters" : {
+          "InstanceAmi" : { "Fn::If" : [
+            "UseCustomSlaveAmi",
+            { "Ref" : "SlaveInstanceAmi" },
+            { "Fn::FindInMap" : [ "RegionMap", { "Ref" : "AWS::Region" }, "AMI"] }
+          ]},
+          "SpotPrice": "0.060",
+          "InstanceType" : "m3.medium",
+          "KeyName" : { "Ref" : "KeyName" },
+          "ClusterId" : { "Ref" : "ClusterId" },
+          "ClusterSize" : "1",
+          "DockerCredentials" : { "Ref" : "DockerCredentials" },
+          "LogstashConfig" : { "Ref" : "SlaveLogstashConfig" },
+          "ConfigScriptS3Bucket" : { "Ref" : "SlaveConfigScriptS3Bucket" },
+          "ConfigScriptS3Path" : { "Ref" : "SlaveConfigScriptS3Path" },
+          "MesosResources" : { "Ref" : "SlaveResources" },
+          "ExhibitorDiscoveryUrl" : { "Ref" : "ExhibitorDiscoveryUrl" },
+          "ZkClientSecurityGroup" : { "Ref" : "ZkClientSecurityGroup" },
+          "MesosMasterSecurityGroup" : { "Fn::GetAtt" : [ "MesosMasterStack", "Outputs.MesosMasterSecurityGroup" ] },
+          "AdminSecurityGroup" : { "Ref" : "AdminSecurityGroup" },
+          "Subnets" : { "Ref" : "Subnets" },
+          "VpcId" : { "Ref" : "VpcId" },
+          "AvailabilityZones" : { "Ref" : "AvailabilityZones" }
+        }
+      }
+    },
+    "MesosSlaveStackLarge" : {
+      "Type" : "AWS::CloudFormation::Stack",
+      "DependsOn" : "MesosMasterStack",
+      "Properties" : {
+        "TemplateURL" : { "Ref" : "MesosSlaveTemplateUrl" },
+        "TimeoutInMinutes" : "15",
+        "Parameters" : {
+          "InstanceAmi" : { "Fn::If" : [
+            "UseCustomSlaveAmi",
+            { "Ref" : "SlaveInstanceAmi" },
+            { "Fn::FindInMap" : [ "RegionMap", { "Ref" : "AWS::Region" }, "AMI"] }
+          ]},
+          "InstanceType" : "m3.large",
+          "KeyName" : { "Ref" : "KeyName" },
+          "ClusterId" : { "Ref" : "ClusterId" },
+          "ClusterSize" : "1",
+          "DockerCredentials" : { "Ref" : "DockerCredentials" },
+          "LogstashConfig" : { "Ref" : "SlaveLogstashConfig" },
+          "ConfigScriptS3Bucket" : { "Ref" : "SlaveConfigScriptS3Bucket" },
+          "ConfigScriptS3Path" : { "Ref" : "SlaveConfigScriptS3Path" },
+          "MesosResources" : { "Ref" : "SlaveResources" },
+          "ExhibitorDiscoveryUrl" : { "Ref" : "ExhibitorDiscoveryUrl" },
+          "ZkClientSecurityGroup" : { "Ref" : "ZkClientSecurityGroup" },
+          "MesosMasterSecurityGroup" : { "Fn::GetAtt" : [ "MesosMasterStack", "Outputs.MesosMasterSecurityGroup" ] },
+          "AdminSecurityGroup" : { "Ref" : "AdminSecurityGroup" },
+          "Subnets" : { "Ref" : "Subnets" },
+          "VpcId" : { "Ref" : "VpcId" },
+          "AvailabilityZones" : { "Ref" : "AvailabilityZones" }
+        }
+      }
+    },
+
+    "MesosSlaveStackLargeSpot" : {
+      "Type" : "AWS::CloudFormation::Stack",
+      "DependsOn" : "MesosMasterStack",
+      "Properties" : {
+        "TemplateURL" : { "Ref" : "MesosSlaveSpotTemplateUrl" },
+        "TimeoutInMinutes" : "15",
+        "Parameters" : {
+          "InstanceAmi" : { "Fn::If" : [
+            "UseCustomSlaveAmi",
+            { "Ref" : "SlaveInstanceAmi" },
+            { "Fn::FindInMap" : [ "RegionMap", { "Ref" : "AWS::Region" }, "AMI"] }
+          ]},
+          "InstanceType" : "m3.large",
+          "SpotPrice": "0.11",
+          "KeyName" : { "Ref" : "KeyName" },
+          "ClusterId" : { "Ref" : "ClusterId" },
+          "ClusterSize" : "1",
           "DockerCredentials" : { "Ref" : "DockerCredentials" },
           "LogstashConfig" : { "Ref" : "SlaveLogstashConfig" },
           "ConfigScriptS3Bucket" : { "Ref" : "SlaveConfigScriptS3Bucket" },

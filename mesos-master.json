@@ -257,7 +257,13 @@
                 "mode"    : "000644",
                 "owner"   : "root",
                 "group"   : "root"
-              }
+              },
+              "/usr/local/bin/haproxy-marathon-bridge" : {
+              "source"  : "https://raw.githubusercontent.com/mesosphere/marathon/master/bin/haproxy-marathon-bridge",
+              "mode"    : "000755",
+              "owner"   : "root",
+              "group"   : "root"
+            }
             }
           }
         }
@@ -346,9 +352,9 @@
           ]},
 
           "# Set up HA proxy for services\n",
-          "wget https://raw.githubusercontent.com/mesosphere/marathon/master/bin/haproxy-marathon-bridge /usr/local/bin\n",
-          "chmod +x /usr/local/bin\n",
-          "/usr/local/bin/marathon-bridge install_haproxy_system localhost:8080\n",
+          "sudo apt-get update\n",
+          "sudo apt-get install haproxy\n",
+          "sudo /usr/local/bin/haproxy-marathon-bridge install_haproxy_system localhost:8080\n",
 
           "# All is well so signal success\n",
           "cfn-signal -e 0 -r \"Stack setup complete\" ",
@@ -367,8 +373,7 @@
         "GroupDescription" : "Mesos Masters",
         "VpcId" : { "Ref" : "VpcId" },
         "SecurityGroupIngress" : [
-          { "IpProtocol" : "tcp", "FromPort" : "5050", "ToPort" : "5050", "SourceSecurityGroupId" : { "Ref" : "LbSecurityGroup"} },
-          { "IpProtocol" : "tcp", "FromPort" : "8080", "ToPort" : "8080", "SourceSecurityGroupId" : { "Ref" : "LbSecurityGroup"} }
+          { "IpProtocol" : "tcp", "FromPort" : "0", "ToPort" : "65535", "SourceSecurityGroupId" : { "Ref" : "LbSecurityGroup"} }
         ]
       }
     },
@@ -408,6 +413,12 @@
             "LoadBalancerPort" : "8080",
             "Protocol" : "HTTP",
             "InstancePort" : "8080",
+            "InstanceProtocol" : "HTTP"
+          },
+          {
+            "LoadBalancerPort" : "8090",
+            "Protocol" : "HTTP",
+            "InstancePort" : "8090",
             "InstanceProtocol" : "HTTP"
           }
         ],
@@ -450,7 +461,6 @@
         }
       }
     }
-
   },
 
   "Outputs" : {
