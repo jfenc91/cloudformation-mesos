@@ -104,6 +104,20 @@
       "Description" : "Timeout on initial stack creation",
       "Type" : "String",
       "Default": "PT10M"
+    },
+
+
+    "PublicMasterElb" : {
+      "Description" : "Public ELB for masters",
+      "Type" : "String"
+    },
+    "PrivateMasterElb" : {
+      "Description" : "Private ELB for masters",
+      "Type" : "String"
+    },
+    "MasterSecurityGroup" : {
+      "Description" : "security group for masters",
+      "Type" : "String"
     }
   },
 
@@ -173,7 +187,7 @@
         "MinSize" : { "Ref" : "ClusterSize" },
         "MaxSize" : { "Ref" : "ClusterSize" },
         "DesiredCapacity" : { "Ref" : "ClusterSize" },
-        "LoadBalancerNames" : [ { "Ref" : "PublicElb" }, { "Ref" : "PrivateElb" } ],
+        "LoadBalancerNames" : [ { "Ref" : "PublicMasterElb" }, { "Ref" : "PrivateMasterElb" } ],
         "VPCZoneIdentifier" : { "Ref" : "Subnets" },
         "Tags" : [
           {
@@ -365,115 +379,6 @@
           "#EOF"
         ]]}}
       }
-    },
-
-    "MasterSecurityGroup" : {
-      "Type" : "AWS::EC2::SecurityGroup",
-      "Properties" : {
-        "GroupDescription" : "Mesos Masters",
-        "VpcId" : { "Ref" : "VpcId" },
-        "SecurityGroupIngress" : [
-          { "IpProtocol" : "tcp", "FromPort" : "0", "ToPort" : "65535", "SourceSecurityGroupId" : { "Ref" : "LbSecurityGroup"} }
-        ]
-      }
-    },
-
-    "MasterToMasterIngress" : {
-      "Type" : "AWS::EC2::SecurityGroupIngress",
-      "Properties" : {
-        "GroupId" : { "Ref" : "MasterSecurityGroup" },
-        "IpProtocol" : "tcp",
-        "FromPort" : "5050",
-        "ToPort" : "5050",
-        "SourceSecurityGroupId" : { "Ref" : "MasterSecurityGroup" }
-      }
-    },
-
-    "LbSecurityGroup" : {
-      "Type" : "AWS::EC2::SecurityGroup",
-      "Properties" : {
-        "GroupDescription" : "Mesos Master LB",
-        "VpcId" : { "Ref" : "VpcId" }
-      }
-    },
-
-    "PublicElb" : {
-      "Type" : "AWS::ElasticLoadBalancing::LoadBalancer",
-      "Properties" : {
-        "SecurityGroups": [{ "Ref": "LbSecurityGroup" }, { "Ref" : "AdminSecurityGroup" }],
-        "Subnets": { "Ref": "Subnets" },
-        "Listeners" : [
-          {
-            "LoadBalancerPort" : "5050",
-            "Protocol" : "HTTP",
-            "InstancePort" : "5050",
-            "InstanceProtocol" : "HTTP"
-          },
-          {
-            "LoadBalancerPort" : "8080",
-            "Protocol" : "HTTP",
-            "InstancePort" : "8080",
-            "InstanceProtocol" : "HTTP"
-          },
-          {
-            "LoadBalancerPort" : "8090",
-            "Protocol" : "HTTP",
-            "InstancePort" : "8090",
-            "InstanceProtocol" : "HTTP"
-          }
-        ],
-        "HealthCheck" : {
-          "Target" : "HTTP:5050/health",
-          "HealthyThreshold" : "2",
-          "UnhealthyThreshold" : "2",
-          "Interval" : "30",
-          "Timeout" : "5"
-        }
-      }
-    },
-
-    "PrivateElb" : {
-      "Type" : "AWS::ElasticLoadBalancing::LoadBalancer",
-      "Properties" : {
-        "Scheme" : "internal",
-        "SecurityGroups": [{ "Ref": "LbSecurityGroup" }, { "Ref" : "AdminSecurityGroup" }, { "Ref" : "MasterSecurityGroup" }],
-        "Subnets": { "Ref": "Subnets" },
-        "Listeners" : [
-          {
-            "LoadBalancerPort" : "5050",
-            "Protocol" : "HTTP",
-            "InstancePort" : "5050",
-            "InstanceProtocol" : "HTTP"
-          },
-          {
-            "LoadBalancerPort" : "8080",
-            "Protocol" : "HTTP",
-            "InstancePort" : "8080",
-            "InstanceProtocol" : "HTTP"
-          }
-        ],
-        "HealthCheck" : {
-          "Target" : "HTTP:5050/health",
-          "HealthyThreshold" : "2",
-          "UnhealthyThreshold" : "2",
-          "Interval" : "30",
-          "Timeout" : "5"
-        }
-      }
-    }
-  },
-
-  "Outputs" : {
-    "MesosMasterSecurityGroup" : {
-      "Value" : { "Ref" : "MasterSecurityGroup" }
-    },
-    "PublicElbAddress" : {
-      "Description" : "Mesos Master public ELB",
-      "Value" : { "Fn::GetAtt" : [ "PublicElb", "DNSName" ]}
-    },
-    "PrivateElbAddress" : {
-      "Description" : "Mesos Master private ELB",
-      "Value" : { "Fn::GetAtt" : [ "PrivateElb", "DNSName" ]}
     }
   }
 }

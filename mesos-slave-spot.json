@@ -9,6 +9,10 @@
       "Description" : "Mesos AMI",
       "Type" : "String"
     },
+    "SpotPrice" : {
+      "Description" : "SpotPrice",
+      "Type" : "String"
+    },
     "InstanceType" : {
       "Description" : "EC2 instance type",
       "Type" : "String",
@@ -30,10 +34,6 @@
     },
     "ClusterId" : {
       "Description" : "Mesos cluster ID",
-      "Type" : "String"
-    },
-    "SecurityGroup" : {
-      "Description" : "security group",
       "Type" : "String"
     },
     "ClusterSize" : {
@@ -99,6 +99,10 @@
       "Description" : "Timeout on initial stack creation",
       "Type" : "String",
       "Default": "PT10M"
+    },
+    "SecurityGroup" : {
+      "Description" : "security group",
+      "Type" : "String"
     }
   },
 
@@ -177,11 +181,6 @@
             "PropagateAtLaunch" : "true"
           }
         ]
-      },
-      "CreationPolicy" : {
-        "ResourceSignal" : {
-          "Timeout" : { "Ref" : "StackCreationTimeout" }
-        }
       }
     },
 
@@ -266,6 +265,7 @@
         "AssociatePublicIpAddress": "true",
         "IamInstanceProfile" : { "Ref" : "SlaveInstanceProfile" },
         "InstanceType" : { "Ref" : "InstanceType" },
+        "SpotPrice" : {"Ref" : "SpotPrice"},
         "UserData"       : { "Fn::Base64" : { "Fn::Join" : ["", [
           "#!/bin/bash -ex\n",
 

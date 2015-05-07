@@ -165,6 +165,18 @@
     "MesosSlaveSpotTemplateUrl" : {
       "Description" : "URL of the Mesos Slave CloudFormation template on S3 (must be \"https://s3.amazonaws.com/<bucket>/<key>\")",
       "Type" : "String"
+    },
+    "PublicMasterElb" : {
+      "Description" : "Public master elb",
+      "Type" : "String"
+    },
+    "PrivateMasterElb" : {
+      "Description" : "private master elb",
+      "Type" : "String"
+    },
+    "MesosMasterSecurityGroup" : {
+      "Description" : "master security group",
+      "Type" : "String"
     }
   },
 
@@ -176,7 +188,7 @@
   "Mappings" : {
     "RegionMap" : {
       "us-east-1" : {
-        "AMI" : "ami-5296903a"
+        "AMI" : "ami-0e2d2d66"
       },
       "us-west-1" : {
         "AMI" : "ami-0fc72a4b"
@@ -203,6 +215,24 @@
   },
 
   "Resources" : {
+    "SecurityGroup" : {
+      "Type" : "AWS::EC2::SecurityGroup",
+      "Properties" : {
+        "GroupDescription" : "Mesos Slaves",
+        "VpcId" : { "Ref" : "VpcId" }
+      }
+    },
+
+    "MasterToSlaveIngress" : {
+      "Type" : "AWS::EC2::SecurityGroupIngress",
+      "Properties" : {
+        "GroupId" : { "Ref" : "SecurityGroup" },
+        "IpProtocol" : "tcp",
+        "FromPort" : "0",
+        "ToPort" : "65535",
+        "SourceSecurityGroupId" : { "Ref" : "MesosMasterSecurityGroup" }
+      }
+    },
     "MesosMasterStack" : {
       "Type" : "AWS::CloudFormation::Stack",
       "Properties" : {
@@ -231,7 +261,11 @@
           "AdminSecurityGroup" : { "Ref" : "AdminSecurityGroup" },
           "Subnets" : { "Ref" : "Subnets" },
           "VpcId" : { "Ref" : "VpcId" },
-          "AvailabilityZones" : { "Ref" : "AvailabilityZones" }
+          "AvailabilityZones" : { "Ref" : "AvailabilityZones" },
+          "PublicMasterElb" : { "Ref" : "PublicMasterElb" },
+          "PrivateMasterElb" : { "Ref" : "PrivateMasterElb" },
+          "MasterSecurityGroup" : {"Ref" : "MesosMasterSecurityGroup"}
+          
         }
       }
     },
@@ -258,11 +292,12 @@
           "MesosResources" : { "Ref" : "SlaveResources" },
           "ExhibitorDiscoveryUrl" : { "Ref" : "ExhibitorDiscoveryUrl" },
           "ZkClientSecurityGroup" : { "Ref" : "ZkClientSecurityGroup" },
-          "MesosMasterSecurityGroup" : { "Fn::GetAtt" : [ "MesosMasterStack", "Outputs.MesosMasterSecurityGroup" ] },
+          "MesosMasterSecurityGroup" : { "Ref" : "MesosMasterSecurityGroup"},
           "AdminSecurityGroup" : { "Ref" : "AdminSecurityGroup" },
           "Subnets" : { "Ref" : "Subnets" },
           "VpcId" : { "Ref" : "VpcId" },
-          "AvailabilityZones" : { "Ref" : "AvailabilityZones" }
+          "AvailabilityZones" : { "Ref" : "AvailabilityZones" },
+          "SecurityGroup" : { "Ref" : "SecurityGroup" }
         }
       }
     },
@@ -290,10 +325,11 @@
           "MesosResources" : { "Ref" : "SlaveResources" },
           "ExhibitorDiscoveryUrl" : { "Ref" : "ExhibitorDiscoveryUrl" },
           "ZkClientSecurityGroup" : { "Ref" : "ZkClientSecurityGroup" },
-          "MesosMasterSecurityGroup" : { "Fn::GetAtt" : [ "MesosMasterStack", "Outputs.MesosMasterSecurityGroup" ] },
+          "MesosMasterSecurityGroup" : {  "Ref" : "MesosMasterSecurityGroup" },
           "AdminSecurityGroup" : { "Ref" : "AdminSecurityGroup" },
           "Subnets" : { "Ref" : "Subnets" },
           "VpcId" : { "Ref" : "VpcId" },
+          "SecurityGroup" : { "Ref" : "SecurityGroup" },
           "AvailabilityZones" : { "Ref" : "AvailabilityZones" }
         }
       }
@@ -321,10 +357,11 @@
           "MesosResources" : { "Ref" : "SlaveResources" },
           "ExhibitorDiscoveryUrl" : { "Ref" : "ExhibitorDiscoveryUrl" },
           "ZkClientSecurityGroup" : { "Ref" : "ZkClientSecurityGroup" },
-          "MesosMasterSecurityGroup" : { "Fn::GetAtt" : [ "MesosMasterStack", "Outputs.MesosMasterSecurityGroup" ] },
+          "MesosMasterSecurityGroup" : {  "Ref" : "MesosMasterSecurityGroup" },
           "AdminSecurityGroup" : { "Ref" : "AdminSecurityGroup" },
           "Subnets" : { "Ref" : "Subnets" },
           "VpcId" : { "Ref" : "VpcId" },
+          "SecurityGroup" : { "Ref" : "SecurityGroup" },
           "AvailabilityZones" : { "Ref" : "AvailabilityZones" }
         }
       }
@@ -354,10 +391,45 @@
           "MesosResources" : { "Ref" : "SlaveResources" },
           "ExhibitorDiscoveryUrl" : { "Ref" : "ExhibitorDiscoveryUrl" },
           "ZkClientSecurityGroup" : { "Ref" : "ZkClientSecurityGroup" },
-          "MesosMasterSecurityGroup" : { "Fn::GetAtt" : [ "MesosMasterStack", "Outputs.MesosMasterSecurityGroup" ] },
+          "MesosMasterSecurityGroup" : {  "Ref" : "MesosMasterSecurityGroup" },
           "AdminSecurityGroup" : { "Ref" : "AdminSecurityGroup" },
           "Subnets" : { "Ref" : "Subnets" },
           "VpcId" : { "Ref" : "VpcId" },
+          "SecurityGroup" : { "Ref" : "SecurityGroup" },
+          "AvailabilityZones" : { "Ref" : "AvailabilityZones" }
+        }
+      }
+    },
+
+    "MesosSlaveStackXLargeSpot" : {
+      "Type" : "AWS::CloudFormation::Stack",
+      "DependsOn" : "MesosMasterStack",
+      "Properties" : {
+        "TemplateURL" : { "Ref" : "MesosSlaveSpotTemplateUrl" },
+        "TimeoutInMinutes" : "15",
+        "Parameters" : {
+          "InstanceAmi" : { "Fn::If" : [
+            "UseCustomSlaveAmi",
+            { "Ref" : "SlaveInstanceAmi" },
+            { "Fn::FindInMap" : [ "RegionMap", { "Ref" : "AWS::Region" }, "AMI"] }
+          ]},
+          "InstanceType" : "m3.xlarge",
+          "SpotPrice": "0.20",
+          "KeyName" : { "Ref" : "KeyName" },
+          "ClusterId" : { "Ref" : "ClusterId" },
+          "ClusterSize" : "1",
+          "DockerCredentials" : { "Ref" : "DockerCredentials" },
+          "LogstashConfig" : { "Ref" : "SlaveLogstashConfig" },
+          "ConfigScriptS3Bucket" : { "Ref" : "SlaveConfigScriptS3Bucket" },
+          "ConfigScriptS3Path" : { "Ref" : "SlaveConfigScriptS3Path" },
+          "MesosResources" : { "Ref" : "SlaveResources" },
+          "ExhibitorDiscoveryUrl" : { "Ref" : "ExhibitorDiscoveryUrl" },
+          "ZkClientSecurityGroup" : { "Ref" : "ZkClientSecurityGroup" },
+          "MesosMasterSecurityGroup" : { "Ref" : "MesosMasterSecurityGroup"},
+          "AdminSecurityGroup" : { "Ref" : "AdminSecurityGroup" },
+          "Subnets" : { "Ref" : "Subnets" },
+          "VpcId" : { "Ref" : "VpcId" },
+          "SecurityGroup" : { "Ref" : "SecurityGroup" },
           "AvailabilityZones" : { "Ref" : "AvailabilityZones" }
         }
       }
